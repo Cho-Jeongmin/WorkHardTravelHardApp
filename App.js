@@ -1,30 +1,48 @@
 import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
-  TouchableHighlight,
-  TouchableWithoutFeedback,
+  TextInput,
 } from "react-native";
 import { theme } from "./colors";
 
 export default function App() {
+  const [working, setWorking] = useState(true);
+  const [text, setText] = useState("");
+  const travel = () => setWorking(false);
+  const work = () => setWorking(true);
+  const onChangeText = (payload) => setText(payload);
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0}>
-          <Text style={styles.btnText}>Work</Text>
+        <TouchableOpacity onPress={work}>
+          <Text
+            style={{ ...styles.btnText, color: working ? "white" : theme.grey }}
+          >
+            Work
+          </Text>
         </TouchableOpacity>
-        <TouchableWithoutFeedback
-          onPress={() => {
-            console.log("pressed");
-          }}
-        >
-          <Text style={styles.btnText}>Travel</Text>
-        </TouchableWithoutFeedback>
+        <TouchableOpacity onPress={travel}>
+          <Text
+            style={{
+              ...styles.btnText,
+              color: !working ? "white" : theme.grey,
+            }}
+          >
+            Travel
+          </Text>
+        </TouchableOpacity>
       </View>
+      <TextInput
+        style={styles.input}
+        value={text}
+        onChangeText={onChangeText}
+        placeholder={working ? "Add a To Do" : "Where do you want to go?"}
+      />
     </View>
   );
 }
@@ -38,12 +56,20 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 100,
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     width: "100%",
   },
   btnText: {
     fontSize: 35,
-    color: "white",
     fontWeight: 600,
+    color: "white",
+  },
+  input: {
+    fontSize: 18,
+    backgroundColor: "white",
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginTop: 10,
   },
 });
