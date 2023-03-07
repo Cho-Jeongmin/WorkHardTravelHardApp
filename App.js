@@ -1,4 +1,5 @@
 import { StatusBar } from "expo-status-bar";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -7,6 +8,8 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { theme } from "./colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,8 +30,10 @@ export default function App() {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   };
   const loadToDos = async () => {
-    const s = await AsyncStorage.getItem(STORAGE_KEY);
-    if (s !== null) setToDos(JSON.parse(s));
+    try {
+      const s = await AsyncStorage.getItem(STORAGE_KEY);
+      if (s !== null) setToDos(JSON.parse(s));
+    } catch (e) {}
   };
   const addToDo = async (event) => {
     if (text === "") return;
@@ -37,7 +42,20 @@ export default function App() {
     await saveToDos(newToDos);
     setText("");
   };
-
+  const deleteToDo = async (key) => {
+    Alert.alert("Delete To Do", "Are you sure you want to delete the To Do?", [
+      { text: "Cancel" },
+      {
+        text: "OK",
+        onPress: async () => {
+          const newToDos = { ...toDos };
+          delete newToDos[key];
+          setToDos(newToDos);
+          await saveToDos(newToDos);
+        },
+      },
+    ]);
+  };
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -68,12 +86,20 @@ export default function App() {
         returnKeyType="done"
         placeholder={working ? "Add a To Do" : "Where do you want to go?"}
       />
+
       <ScrollView>
         {Object.keys(toDos).map(
           (key) =>
             working === toDos[key].working && (
               <View style={styles.toDo} key={key}>
                 <Text style={styles.toDoText}>{toDos[key].text}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    deleteToDo(key);
+                  }}
+                >
+                  <MaterialIcons name="cancel" size={20} color="white" />
+                </TouchableOpacity>
               </View>
             )
         )}
@@ -108,6 +134,9 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   toDo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: theme.grey,
     marginBottom: 10,
     paddingVertical: 20,
