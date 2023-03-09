@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { MaterialIcons } from "@expo/vector-icons";
+import Checkbox from "expo-checkbox";
 import { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -14,30 +15,56 @@ import {
 import { theme } from "./colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const STORAGE_KEY = "@toDos";
+const TODO_KEY = "@toDos";
+const MODE_KEY = "@working";
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
   useEffect(() => {
     loadToDos();
+    loadMode();
+    setLoading(false);
   }, []);
-  const travel = () => setWorking(false);
-  const work = () => setWorking(true);
+  const travel = () => {
+    setWorking(false);
+    saveMode(false);
+  };
+  const work = () => {
+    setWorking(true);
+    saveMode(true);
+  };
+  const saveMode = async (working) => {
+    await AsyncStorage.setItem(MODE_KEY, JSON.stringify(working));
+  };
+  const loadMode = async () => {
+    const s = await AsyncStorage.getItem(MODE_KEY);
+    if (s !== null) setWorking(JSON.parse(s));
+  };
   const onChangeText = (payload) => setText(payload);
+  const complete = (key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].completed = !newToDos[key].completed;
+    setToDos(newToDos);
+    saveToDos(newToDos);
+  };
   const saveToDos = async (toSave) => {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    await AsyncStorage.setItem(TODO_KEY, JSON.stringify(toSave));
   };
   const loadToDos = async () => {
     try {
-      const s = await AsyncStorage.getItem(STORAGE_KEY);
+      const s = await AsyncStorage.getItem(TODO_KEY);
       if (s !== null) setToDos(JSON.parse(s));
     } catch (e) {}
   };
   const addToDo = async (event) => {
     if (text === "") return;
-    const newToDos = { ...toDos, [Date.now()]: { text, working } };
+    const newToDos = {
+      ...toDos,
+      [Date.now()]: { text, working, completed: false },
+    };
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
@@ -56,6 +83,7 @@ export default function App() {
       },
     ]);
   };
+  console.log(working);
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -86,24 +114,44 @@ export default function App() {
         returnKeyType="done"
         placeholder={working ? "Add a To Do" : "Where do you want to go?"}
       />
-
-      <ScrollView>
-        {Object.keys(toDos).map(
-          (key) =>
-            working === toDos[key].working && (
-              <View style={styles.toDo} key={key}>
-                <Text style={styles.toDoText}>{toDos[key].text}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    deleteToDo(key);
-                  }}
-                >
-                  <MaterialIcons name="cancel" size={20} color="white" />
-                </TouchableOpacity>
-              </View>
-            )
-        )}
-      </ScrollView>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <ActivityIndicator size="large" color="white" />
+        </View>
+      ) : (
+        <ScrollView>
+          {Object.keys(toDos).map(
+            (key) =>
+              working === toDos[key].working && (
+                <View style={styles.toDo} key={key}>
+                  <Checkbox
+                    value={toDos[key].completed}
+                    onValueChange={() => {
+                      complete(key);
+                    }}
+                  />
+                  <Text
+                    style={{
+                      ...styles.toDoText,
+                      textDecorationLine: toDos[key].completed
+                        ? "line-through"
+                        : "none",
+                    }}
+                  >
+                    {toDos[key].text}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      deleteToDo(key);
+                    }}
+                  >
+                    <MaterialIcons name="cancel" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+              )
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }
