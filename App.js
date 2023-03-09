@@ -136,6 +136,7 @@ export default function App() {
                       textDecorationLine: toDos[key].completed
                         ? "line-through"
                         : "none",
+                      color: toDos[key].completed ? "#909090" : "white",
                     }}
                   >
                     {toDos[key].text}
