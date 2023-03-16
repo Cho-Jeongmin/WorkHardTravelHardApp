@@ -131,6 +131,7 @@ export default function App() {
         onChangeText={onChangeText}
         onSubmitEditing={addToDo}
         returnKeyType="done"
+        maxLength={15}
         placeholder={working ? "Add a To Do" : "Where do you want to go?"}
       />
       {loading ? (
@@ -148,10 +149,12 @@ export default function App() {
                     onValueChange={() => {
                       completeToDo(key);
                     }}
+                    style={{ flex: 0.5, marginRight: 10 }}
                   />
                   <Text
                     style={{
                       ...styles.toDoText,
+                      flex: 8,
                       textDecorationLine: toDos[key].completed
                         ? "line-through"
                         : "none",
@@ -170,14 +173,16 @@ export default function App() {
                     }}
                     style={{
                       ...styles.modifyingInput,
-                      width: toDos[key].modifying ? 150 : 0,
+                      width: toDos[key].modifying ? 250 : 0,
                       paddingHorizontal: toDos[key].modifying ? 20 : 0,
                     }}
+                    maxLength={15}
                   />
                   <TouchableOpacity
                     onPress={() => {
                       showTextInput(key);
                     }}
+                    style={{ flex: 1 }}
                   >
                     <MaterialCommunityIcons
                       name="pencil"
@@ -186,11 +191,19 @@ export default function App() {
                     />
                   </TouchableOpacity>
                   <TouchableOpacity
+                    style={{ flex: 1 }}
                     onPress={() => {
                       deleteToDo(key);
                     }}
                   >
-                    <MaterialIcons name="cancel" size={20} color="white" />
+                    <MaterialIcons
+                      name="cancel"
+                      size={20}
+                      color="white"
+                      style={{
+                        marginLeft: 10,
+                      }}
+                    />
                   </TouchableOpacity>
                 </View>
               )
