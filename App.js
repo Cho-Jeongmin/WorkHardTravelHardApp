@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useEffect, useState } from "react";
 import {
@@ -44,11 +44,16 @@ export default function App() {
     if (s !== null) setWorking(JSON.parse(s));
   };
   const onChangeText = (payload) => setText(payload);
-  const complete = (key) => {
-    const newToDos = { ...toDos };
-    newToDos[key].completed = !newToDos[key].completed;
+
+  const addToDo = async (event) => {
+    if (text === "") return;
+    const newToDos = {
+      ...toDos,
+      [Date.now()]: { text, working, completed: false, modifying: false },
+    };
     setToDos(newToDos);
-    saveToDos(newToDos);
+    await saveToDos(newToDos);
+    setText("");
   };
   const saveToDos = async (toSave) => {
     await AsyncStorage.setItem(TODO_KEY, JSON.stringify(toSave));
@@ -59,15 +64,12 @@ export default function App() {
       if (s !== null) setToDos(JSON.parse(s));
     } catch (e) {}
   };
-  const addToDo = async (event) => {
-    if (text === "") return;
-    const newToDos = {
-      ...toDos,
-      [Date.now()]: { text, working, completed: false },
-    };
+
+  const completeToDo = (key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].completed = !newToDos[key].completed;
     setToDos(newToDos);
-    await saveToDos(newToDos);
-    setText("");
+    saveToDos(newToDos);
   };
   const deleteToDo = async (key) => {
     Alert.alert("Delete To Do", "Are you sure you want to delete the To Do?", [
@@ -83,7 +85,24 @@ export default function App() {
       },
     ]);
   };
-  console.log(working);
+  const showTextInput = (key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].modifying = true;
+    setToDos(newToDos);
+    saveToDos(newToDos);
+  };
+  const onModifyToDo = (text, key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].text = text;
+    setToDos(newToDos);
+    saveToDos(newToDos);
+  };
+  const hideTextInput = (key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].modifying = false;
+    setToDos(newToDos);
+    saveToDos(newToDos);
+  };
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -127,7 +146,7 @@ export default function App() {
                   <Checkbox
                     value={toDos[key].completed}
                     onValueChange={() => {
-                      complete(key);
+                      completeToDo(key);
                     }}
                   />
                   <Text
@@ -141,6 +160,31 @@ export default function App() {
                   >
                     {toDos[key].text}
                   </Text>
+                  <TextInput
+                    value={toDos[key].text}
+                    onChangeText={(text) => {
+                      onModifyToDo(text, key);
+                    }}
+                    onSubmitEditing={() => {
+                      hideTextInput(key);
+                    }}
+                    style={{
+                      ...styles.modifyingInput,
+                      width: toDos[key].modifying ? 150 : 0,
+                      paddingHorizontal: toDos[key].modifying ? 20 : 0,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => {
+                      showTextInput(key);
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name="pencil"
+                      size={24}
+                      color="white"
+                    />
+                  </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
                       deleteToDo(key);
@@ -193,4 +237,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   toDoText: { color: "white", fontSize: 16, fontWeight: 500 },
+  modifyingInput: {
+    position: "absolute",
+    fontSize: 18,
+    backgroundColor: "white",
+    borderRadius: 30,
+    paddingVertical: 5,
+    marginVertical: 20,
+    marginLeft: 60,
+  },
 });
